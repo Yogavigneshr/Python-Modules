@@ -1,0 +1,238 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ *
+ * The @theme inline block maps CSS custom properties to Tailwind utility
+ * classes (e.g. --color-primary -> bg-primary, text-primary).
+ *
+ * The :root and .dark blocks define the actual color values using oklch.
+ * All colors MUST use oklch format.
+ *
+ * To add a new semantic color:
+ * 1. Add the variable to :root (light value) and .dark (dark value)
+ * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root {
+  /* --- Signal scanner palette ------------------------------------
+     Cool paper background (never cream) + deep indigo-navy ink for
+     structure and a single warm "signal" coral reserved for rank,
+     rating and live-state accents - the one thing on the page that's
+     allowed to be loud. */
+  --radius: 0.65rem;
+  --background: oklch(0.992 0.003 250);
+  --foreground: oklch(0.19 0.035 265);
+  --surface: oklch(1 0 0);
+  --surface-raised: oklch(0.965 0.012 245);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.19 0.035 265);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.19 0.035 265);
+  --primary: oklch(0.47 0.18 255);
+  --primary-foreground: oklch(0.99 0.004 250);
+  --secondary: oklch(0.945 0.018 245);
+  --secondary-foreground: oklch(0.24 0.04 260);
+  --muted: oklch(0.95 0.012 245);
+  --muted-foreground: oklch(0.43 0.035 255);
+  --accent: oklch(0.68 0.18 45);
+  --accent-foreground: oklch(0.99 0.005 50);
+  --destructive: oklch(0.57 0.205 25);
+  --destructive-foreground: oklch(0.99 0.004 250);
+  --border: oklch(0.88 0.018 245);
+  --input: oklch(0.96 0.012 245);
+  --ring: oklch(0.47 0.18 255);
+}
+
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    background-image:
+      radial-gradient(
+        ellipse 90% 55% at 50% -10%,
+        oklch(0.47 0.18 255 / 0.075),
+        transparent
+      ),
+      radial-gradient(
+        oklch(0.47 0.18 255 / 0.045) 1px,
+        transparent 1px
+      );
+    background-size:
+      auto,
+      22px 22px;
+    background-position:
+      center,
+      -10px -10px;
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility label-mono {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-muted-foreground);
+}
+
+@utility field {
+  width: 100%;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: var(--color-background);
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-foreground);
+  outline: none;
+}
+
+@utility field-focus {
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px oklch(0.251 0.057 268 / 0.14);
+  }
+}
+
+/* Rank badge - the signature mark of the app. Every result is, first
+   and foremost, a numbered position, so the number gets a stamped,
+   ledger-style ring instead of sitting flat in a table cell. */
+@utility rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  padding: 0 0.25rem;
+  border-radius: 999px;
+  border: 1.5px solid oklch(0.652 0.184 33.5 / 0.35);
+  background: oklch(0.652 0.184 33.5 / 0.08);
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+/* --- Results protection ---------------------------------------------
+   Best-effort deterrents against a client copy/exporting/printing the
+   results panel. None of this can block OS- or phone-level screenshots
+   or screen recording, and dev tools can't be truly locked out either -
+   nothing running in a browser tab can do either of those. This just
+   stops the common in-browser paths (select+copy, right-click save,
+   browser print/save-page) and shows a small notice if dev tools look
+   open, for a bit of extra friction. */
+.devtools-warning {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  background-color: oklch(0.55 0.19 25 / 0.08);
+  color: var(--color-destructive);
+  padding: 0.5rem 1.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+@media print {
+  .protected-content {
+    display: none !important;
+  }
+}
+
+
+
+/* User-only browser deterrents. Admins are not wrapped in this class. */
+.user-protected-app {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.user-protected-app input,
+.user-protected-app textarea,
+.user-protected-app [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.user-protection-warning {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface, #fff);
+  color: var(--color-destructive, #b91c1c);
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+@media print {
+  .user-protected-app {
+    display: none !important;
+  }
+}
