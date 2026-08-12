@@ -17,7 +17,6 @@ pip install -r requirements.txt
 cp .env.example .env
 # then edit .env: set GOOGLE_PLACES_API_KEY, and DB_* if not using the defaults
 
-# Needs a Postgres server reachable at DB_HOST (localhost by default).
 # Create the DB + role first, e.g.:
 #   createuser leadfinder -P
 #   createdb leadfinder -O leadfinder
