@@ -1,5 +1,4 @@
-# LeadFinder — Full Project (plain React frontend + Django backend)
-
+# LeadFinder
 Two independent apps, run side by side:
 
 - `backend/` — Django + DRF API. All external API calls (Google Places) and
