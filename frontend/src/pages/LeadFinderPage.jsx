@@ -204,6 +204,8 @@ export function LeadFinderPage() {
       });
       setSaveState("saved");
     } catch {
+      // Keep the button available so the user can retry the exact same
+      // visible result set without running the Google search again.
       setSaveState("error");
     }
   }
@@ -358,7 +360,11 @@ export function LeadFinderPage() {
                   ) : (
                     <Save className="size-3.5" />
                   )}
-                  {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved" : "Save results"}
+                  {saveState === "saving"
+                    ? "Saving…"
+                    : saveState === "saved"
+                      ? "Saved"
+                      : "Save results"}
                 </button>
               )}
               {saveState === "error" && (
@@ -403,7 +409,9 @@ export function LeadFinderPage() {
                 </button>
               )}
               <p className="label-mono">
-                {mutation.data ? `${leads.length} shown · ${mutation.data.scanned} scanned` : "no search yet"}
+                {mutation.data
+                  ? `${leads.length} shown · ${mutation.data.scanned} scanned`
+                  : "no search yet"}
               </p>
             </div>
           </div>
@@ -447,7 +455,10 @@ export function LeadFinderPage() {
                       { label: "Searched at", sortKey: null },
                       { label: "", sortKey: null },
                     ].map((col, i) => (
-                      <th key={col.label || i} className="label-mono px-5 py-3 text-left font-semibold">
+                      <th
+                        key={col.label || i}
+                        className="label-mono px-5 py-3 text-left font-semibold"
+                      >
                         {col.sortKey ? (
                           <button
                             type="button"

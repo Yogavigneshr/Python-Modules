@@ -15,7 +15,7 @@ const COLUMNS = [
 
 /** Turns "Unisex Salon" + "Guindy, Chennai" + an ISO date into a safe,
  * descriptive filename base, e.g.
- * "leadfinder_unisex-salon_guindy-chennai_2026-08-10_1432". */
+ * "username_unisex-salon_guindy-chennai_2026-08-10_1432". */
 function buildFilenameBase(meta) {
   const slug = (value) =>
     String(value || "")
@@ -24,14 +24,16 @@ function buildFilenameBase(meta) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
 
-  const parts = ["leadfinder"];
+  const username = slug(meta?.username || "user") || "user";
+  const parts = [username];
   const category = slug(meta?.category);
   const location = slug(meta?.location);
   if (category) parts.push(category);
   if (location) parts.push(location);
 
-  const date = meta?.timestamp ? new Date(meta.timestamp) : new Date();
-  const validDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  // Use the actual export time so every download gets a unique, current
+  // date/time suffix while preserving the existing username/query details.
+  const validDate = new Date();
   const pad = (n) => String(n).padStart(2, "0");
   const stamp = `${validDate.getFullYear()}-${pad(validDate.getMonth() + 1)}-${pad(validDate.getDate())}`;
   const time = `${pad(validDate.getHours())}${pad(validDate.getMinutes())}`;
@@ -136,7 +138,7 @@ async function exportPdf(leads, formatTimestamp, meta) {
  * `formatTimestamp` is passed in so the export uses the exact same
  * date/time formatting shown on screen. `meta` ({ category, location,
  * timestamp }) is used to name the downloaded file, e.g.
- * "leadfinder_unisex-salon_guindy-chennai_2026-08-10_1432.csv".
+ * "username_unisex-salon_guindy-chennai_2026-08-13_174012.csv".
  */
 export async function exportLeads(format, leads, formatTimestamp, meta) {
   if (!leads || leads.length === 0) return;

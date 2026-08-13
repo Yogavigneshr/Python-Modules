@@ -1,4 +1,5 @@
-# LeadFinder
+# LeadFinder — Full Project (plain React frontend + Django backend)
+
 Two independent apps, run side by side:
 
 - `backend/` — Django + DRF API. All external API calls (Google Places) and
@@ -17,6 +18,7 @@ pip install -r requirements.txt
 cp .env.example .env
 # then edit .env: set GOOGLE_PLACES_API_KEY, and DB_* if not using the defaults
 
+# Needs a Postgres server reachable at DB_HOST (localhost by default).
 # Create the DB + role first, e.g.:
 #   createuser leadfinder -P
 #   createdb leadfinder -O leadfinder
@@ -71,3 +73,19 @@ plain React SPA:
 ⚠️ **Note:** `.env` files here only contain placeholders. If a real Google
 Places API key or Supabase credential ever ended up in this project,
 rotate it in the relevant console before deploying.
+
+## Role-specific login
+
+LeadFinder uses separate authentication entry points for each role:
+
+- `/login/user` — regular users (self-signup creates User accounts)
+- `/login/lead` — Lead accounts
+- `/login/admin` — Admin/superuser accounts
+
+The selected login type is validated by the backend against the account's stored role. The client cannot promote or demote an account, and the previous IAM/role-management screen and API have been removed.
+
+To create a new Lead account without changing an existing account's role:
+
+```bash
+python manage.py create_lead lead@example.com --name "Lead User" --password "YourStrongPassword!1"
+```

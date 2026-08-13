@@ -8,7 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 // on the server/API as well.
 export function UserProtection({ children }) {
   const { user, loading } = useAuth();
-  const enabled = !loading && !!user && !user.is_superuser;
+  const enabled = !loading && !!user && !user.is_superuser && user.role !== "lead";
   const [devToolsOpen, setDevToolsOpen] = useState(false);
 
   useEffect(() => {

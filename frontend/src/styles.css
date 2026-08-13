@@ -80,7 +80,6 @@
   --ring: oklch(0.47 0.18 255);
 }
 
-
 @layer base {
   * {
     border-color: var(--color-border);
@@ -94,15 +93,8 @@
     font-weight: 500;
     line-height: 1.5;
     background-image:
-      radial-gradient(
-        ellipse 90% 55% at 50% -10%,
-        oklch(0.47 0.18 255 / 0.075),
-        transparent
-      ),
-      radial-gradient(
-        oklch(0.47 0.18 255 / 0.045) 1px,
-        transparent 1px
-      );
+      radial-gradient(ellipse 90% 55% at 50% -10%, oklch(0.47 0.18 255 / 0.075), transparent),
+      radial-gradient(oklch(0.47 0.18 255 / 0.045) 1px, transparent 1px);
     background-size:
       auto,
       22px 22px;
@@ -198,8 +190,6 @@
   }
 }
 
-
-
 /* User-only browser deterrents. Admins are not wrapped in this class. */
 .user-protected-app {
   -webkit-user-select: none;
@@ -234,5 +224,27 @@
 @media print {
   .user-protected-app {
     display: none !important;
+  }
+}
+
+.admin-content {
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  /* Keep the document canvas fixed. The animated rail overlays this area
+     instead of changing layout width, which prevents the centre-jump/flicker
+     when a navigation item is clicked. */
+  .admin-content {
+    margin-left: 78px;
+  }
+
+  .admin-topbar {
+    margin-left: 78px !important;
+  }
+
+  .admin-sidebar {
+    will-change: width;
+    overflow: visible;
   }
 }

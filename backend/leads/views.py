@@ -1,6 +1,7 @@
 import re
 
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -8,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .models import Lead, Search
+from .audit import log_activity
 from .places_service import SearchParams, search_leads
 from .serializers import (
     MAX_RESULTS_CEILING,
@@ -68,6 +70,10 @@ class SearchLeadsView(APIView):
         except Exception as exc:
             return Response({"error": str(exc)}, status=status.HTTP_502_BAD_GATEWAY)
 
+        # IMPORTANT: a live search is transient. Do not create Search, Lead,
+        # or ActivityLog rows here. The query and its results are persisted
+        # only when the user explicitly presses the Save results button
+        # through SaveSearchView below.
         search_timestamp = timezone.now()
         timestamped_leads = [
             {
@@ -109,34 +115,63 @@ class SaveSearchView(APIView):
         location = normalize_key(data["location"])
         leads_payload = data["leads"]
 
-        saved_search = Search.objects.create(
-            user=request.user,
-            created_by_email=request.user.email,
-            category=category,
-            location=location,
-            max_results=MAX_RESULTS_CEILING,
-            filters=data.get("filters") or {},
-            scanned=data.get("scanned", 0),
-            excluded=data.get("excluded") or None,
-        )
-        if leads_payload:
-            Lead.objects.bulk_create(
-                [
-                    Lead(
-                        search=saved_search,
-                        created_by_email=request.user.email,
-                        place_id=lead["placeId"],
-                        name=lead["name"],
-                        address=lead["address"],
-                        phone=lead["phone"],
-                        website=lead["website"],
-                        maps_url=lead["maps"],
-                        rating=lead["rating"],
-                        reviews=lead["reviews"],
-                        rank=lead["rank"],
+        # Save the complete operation atomically. If one Google result contains
+        # an unusually long field, normalize it to the database column size so
+        # one bad row cannot make the whole user-side Save button fail.
+        def clip(value, limit):
+            return str(value or "")[:limit]
+
+        try:
+            with transaction.atomic():
+                saved_search = Search.objects.create(
+                    user=request.user,
+                    created_by_email=clip(request.user.email, 254),
+                    category=category,
+                    location=location,
+                    max_results=MAX_RESULTS_CEILING,
+                    filters=data.get("filters") or {},
+                    scanned=data.get("scanned", 0),
+                    excluded=data.get("excluded") or None,
+                )
+
+                if leads_payload:
+                    Lead.objects.bulk_create(
+                        [
+                            Lead(
+                                search=saved_search,
+                                created_by_email=clip(request.user.email, 254),
+                                place_id=clip(lead.get("placeId"), 255),
+                                name=clip(lead.get("name"), 255),
+                                address=clip(lead.get("address"), 500),
+                                phone=clip(lead.get("phone"), 50),
+                                website=clip(lead.get("website"), 500),
+                                maps_url=clip(lead.get("maps"), 500),
+                                rating=lead.get("rating") or 0,
+                                reviews=lead.get("reviews") or 0,
+                                rank=lead.get("rank") or 0,
+                            )
+                            for lead in leads_payload
+                        ],
+                        batch_size=100,
                     )
-                    for lead in leads_payload
-                ]
+
+                log_activity(
+                    user=request.user,
+                    actor=request.user,
+                    action="search_saved",
+                    details={
+                        "searchId": str(saved_search.id),
+                        "category": category,
+                        "location": location,
+                        "leadCount": len(leads_payload),
+                    },
+                )
+        except Exception:
+            # Never leave a half-created saved search behind. The client gets a
+            # normal failure response and can safely press Save results again.
+            return Response(
+                {"error": "Unable to save these results. Please try again."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
         return Response(
@@ -160,15 +195,22 @@ class SearchLeadsDetailView(APIView):
 
     def get(self, request, search_id):
         try:
-            # Only superusers can look at another user's saved search -
-            # matches the admin panel's access gate (see IsSuperUser).
-            is_admin = request.user.is_superuser
+            # Superusers and Leads may inspect a saved search from the
+            # operational user panel. Ordinary users remain scoped to self.
+            is_admin = request.user.is_superuser or getattr(request.user, "role", None) == "lead"
             queryset = Search.objects.all() if is_admin else Search.objects.filter(user=request.user)
             search = queryset.get(id=search_id)
         except Search.DoesNotExist:
             return Response({"error": "Search not found."}, status=status.HTTP_404_NOT_FOUND)
 
         leads = search.leads.order_by("rank")
+        if request.user.id != search.user_id:
+            log_activity(
+                user=search.user,
+                actor=request.user,
+                action="saved_search_viewed",
+                details={"searchId": str(search.id), "leadCount": leads.count()},
+            )
         return Response(
             {
                 "id": str(search.id),
