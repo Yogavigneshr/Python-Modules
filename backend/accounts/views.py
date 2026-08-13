@@ -5,6 +5,8 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .serializers import RegisterSerializer, UserSerializer
+from .models import PendingLeadSignup
+from leads.audit import log_activity
 
 
 class RegisterView(APIView):
@@ -19,6 +21,7 @@ class RegisterView(APIView):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+        log_activity(user=user, actor=user, action="account_registered")
 
         # Registration deliberately does NOT create a logged-in session.
         # The user must return to the login screen and authenticate with the
@@ -52,9 +55,22 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        log_activity(user=request.user, actor=request.user, action="logout")
         try:
             token = RefreshToken(request.data.get("refresh"))
             token.blacklist()
         except Exception:
             pass
         return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+class LeadSignupStatusView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = str(request.data.get("email", "")).strip().lower()
+        try:
+            pending = PendingLeadSignup.objects.select_related("user").get(user__email=email, status="pending")
+        except PendingLeadSignup.DoesNotExist:
+            return Response({"pending": False})
+        return Response({"pending": True, "status": pending.status})

@@ -1,11 +1,12 @@
 .venv/
-
+venv
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
 __init__
 
+.env
 
 # Logs
 logs

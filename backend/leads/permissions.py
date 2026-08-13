@@ -12,3 +12,19 @@ class IsSuperUser(BasePermission):
     def has_permission(self, request, view):
         user = request.user
         return bool(user and user.is_authenticated and user.is_superuser)
+
+
+class IsAdminOrLead(BasePermission):
+    """Allows superusers and explicitly promoted Lead accounts.
+
+    Lead accounts can perform the same operational admin tasks (user data,
+    exports, recovery) but never receive the audit-log API.
+    """
+
+    def has_permission(self, request, view):
+        user = request.user
+        return bool(
+            user
+            and user.is_authenticated
+            and (user.is_superuser or getattr(user, "role", None) == "lead")
+        )

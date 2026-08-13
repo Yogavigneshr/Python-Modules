@@ -24,8 +24,8 @@ export function AuthProvider({ children }) {
       .finally(() => setLoading(false));
   }, []);
 
-  async function signIn(email, password) {
-    const profile = await authApi.login(email, password);
+  async function signIn(role, email, password) {
+    const profile = await authApi.login(role, email, password);
     setUser(profile);
     return profile;
   }
@@ -39,12 +39,16 @@ export function AuthProvider({ children }) {
     return profile;
   }
 
+  async function signUpLead(fullName, email, password) {
+    return authApi.registerLead(fullName, email, password);
+  }
+
   async function signOut() {
     await authApi.logout();
     setUser(null);
   }
 
-  const value = { user, loading, signIn, signUp, signOut };
+  const value = { user, loading, signIn, signUp, signUpLead, signOut };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

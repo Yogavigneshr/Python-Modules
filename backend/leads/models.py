@@ -97,3 +97,44 @@ class DeletedDataRecovery(models.Model):
 
     class Meta:
         ordering = ["-deleted_at"]
+
+
+
+class ActivityLog(models.Model):
+    """Immutable-ish audit trail for user actions and admin operations.
+
+    `user` is the account whose activity is being recorded. It is nullable so
+    logs survive a user deletion; `user_email` preserves the identity even
+    after the account row is gone. `actor` identifies the admin/lead who
+    performed an operation on someone else's data.
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="activity_logs",
+    )
+    user_email = models.EmailField(db_index=True, blank=True, default="")
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="performed_activity_logs",
+    )
+    action = models.CharField(max_length=80, db_index=True)
+    details = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user_email", "-created_at"]),
+            models.Index(fields=["action", "-created_at"]),
+        ]
+
+    def __str__(self):
+        return f"{self.user_email} · {self.action}"

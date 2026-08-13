@@ -11,11 +11,11 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 const RouterContext = createContext(null);
 
 export function RouterProvider({ children }) {
-  const [path, setPath] = useState(() => window.location.pathname);
+  const [path, setPath] = useState(() => window.location.pathname + window.location.search);
 
   useEffect(() => {
     function onPopState() {
-      setPath(window.location.pathname);
+      setPath(window.location.pathname + window.location.search);
     }
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
@@ -24,13 +24,14 @@ export function RouterProvider({ children }) {
   const navigate = useMemo(
     () =>
       (to, { replace = false } = {}) => {
-        if (to === window.location.pathname) return;
+        if (to === window.location.href.slice(window.location.origin.length)) return;
         if (replace) {
           window.history.replaceState({}, "", to);
         } else {
           window.history.pushState({}, "", to);
         }
         setPath(to);
+        window.requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: "auto" }));
       },
     [],
   );
@@ -57,7 +58,8 @@ export function useNavigate() {
 /** Renders `children` only when the current path matches `path` exactly. */
 export function Route({ path, children }) {
   const current = usePath();
-  return current === path ? children : null;
+  const currentPathname = current.split("?")[0];
+  return currentPathname === path ? children : null;
 }
 
 /** In-app link: same look as <a>, but navigates via history.pushState. */
